@@ -1,0 +1,43 @@
+# Checks and tests the plugin on every push and pull request. Pushing a tag
+# such as v1.0.0 (plugin.json's version) packs it into a GitHub release,
+# which Dalibre installs and updates from: Plugins > Install from GitHub,
+# and the Marketplace once listed.
+name: Plugin
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Test
+        run: node test.mjs
+      - name: Check
+        run: npx --yes dalibre-plugin@latest check .
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(node -p "require('./plugin.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::the tag is $GITHUB_REF_NAME but plugin.json's version is $version"
+            exit 1
+          fi
+          npx --yes dalibre-plugin@latest pack . -o dist
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/*.dalibre-plugin --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.dalibre-plugin --title "$GITHUB_REF_NAME" --generate-notes
+          fi

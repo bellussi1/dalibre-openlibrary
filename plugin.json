@@ -1,0 +1,47 @@
+{
+  "$schema": "./plugin.schema.json",
+  "id": "io.github.bellussi1.openlibrary",
+  "name": "Open Library",
+  "version": "1.0.0",
+  "api": 1,
+  "dalibre": ">=0.4.0",
+  "description": "Book details, covers, series and descriptions from Open Library",
+  "author": "Enzo Bellussi",
+  "homepage": "https://github.com/bellussi1/dalibre-openlibrary",
+  "license": "MIT",
+  "icon": "library",
+  "capabilities": {
+    "metadata": {
+      "fields": [
+        "title",
+        "authors",
+        "series",
+        "tags",
+        "publisher",
+        "pubdate",
+        "language",
+        "identifiers",
+        "cover",
+        "description"
+      ]
+    }
+  },
+  "permissions": {
+    "hosts": [
+      "archive.org",
+      "*.archive.org",
+      "covers.openlibrary.org",
+      "openlibrary.org"
+    ],
+    "library": "read"
+  },
+  "settings": [
+    {
+      "key": "maxResults",
+      "title": "Maximum candidates",
+      "type": "number",
+      "default": "10",
+      "description": "Up to 20 results returned per search."
+    }
+  ]
+}
