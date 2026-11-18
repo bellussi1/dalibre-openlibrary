@@ -113,8 +113,8 @@ export async function identify(book) {
 
   let data = await getJSON(`${API}/search.json?${new URLSearchParams(params)}`, false);
   let docs = /** @type {any[]} */ (data?.docs ?? []);
-  if (docs.length === 0 && firstAuthor) {
-    const q = `${title} ${firstAuthor}`;
+  if (docs.length === 0) {
+    const q = firstAuthor ? `${title} ${firstAuthor}` : title;
     data = await getJSON(`${API}/search.json?${new URLSearchParams({ q, fields: SEARCH_FIELDS, limit: String(Math.min(max * 2, 25)) })}`, false);
     docs = /** @type {any[]} */ (data?.docs ?? []);
   }
@@ -282,7 +282,12 @@ function docToCandidate(doc, work, preferredLang) {
   /** @type {Record<string, string>} */
   const identifiers = { openlibrary: id };
   const isbns = /** @type {string[]} */ (doc.isbn ?? []).map(cleanISBN).filter(Boolean);
-  const bestIsbn = isbns.find((i) => i.length === 13) ?? isbns[0];
+  const preferPt = Boolean(preferredLang && langMatches(preferredLang, "por"));
+  const brIsbn = preferPt
+    ? isbns.find((i) => i.startsWith("97865") || i.startsWith("97885")) ??
+      isbns.find((i) => i.length === 10 && (i.startsWith("65") || i.startsWith("85")))
+    : undefined;
+  const bestIsbn = brIsbn ?? isbns.find((i) => i.length === 13) ?? isbns[0];
   if (bestIsbn) identifiers.isbn = bestIsbn;
   if (doc.id_wikidata?.[0]) identifiers.wd = String(doc.id_wikidata[0]);
   if (doc.id_goodreads?.[0]) identifiers.goodreads = String(doc.id_goodreads[0]);

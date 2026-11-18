@@ -225,6 +225,42 @@ const calledUrls = [];
   assert.deepEqual(ranked[0].tags, ["Literatura brasileira", "Ficção"]);
   assert.equal(ranked[0].pubdate, "2019");
   assert.equal(ranked[0].cover, "https://covers.openlibrary.org/b/id/12369648-L.jpg");
+
+  // Search-box free-text fallback (?q=...) even when authors is empty + Brazilian ISBN preference when language is pt
+  globalThis.fetch = async (url) => {
+    const u = new URL(String(url));
+    if (u.origin === "https://openlibrary.org" && u.pathname === "/search.json") {
+      if (u.searchParams.has("title")) return jsonResponse({ docs: [] });
+      if (u.searchParams.get("q") === "Condição Artificial Martha Wells") {
+        return jsonResponse({
+          docs: [
+            {
+              key: "/works/OL19747311W",
+              title: "Artificial Condition",
+              author_name: ["Martha Wells"],
+              language: ["eng", "por"],
+              first_publish_year: 2018,
+              isbn: ["9781250186935", "9788576577263", "8576577267"],
+              cover_i: 15129488,
+            },
+          ],
+        });
+      }
+    }
+    if (u.href === "https://openlibrary.org/works/OL19747311W.json") {
+      return jsonResponse({ key: "/works/OL19747311W", description: "Murderbot #2." });
+    }
+    throw new Error(`Unexpected URL in free-text fallback test: ${u.href}`);
+  };
+  const fallbackOut = await identify({
+    title: "Condição Artificial Martha Wells",
+    authors: [],
+    identifiers: {},
+    language: "pt",
+  });
+  assert.equal(fallbackOut.length, 1);
+  assert.equal(fallbackOut[0].id, "OL19747311W");
+  assert.equal(fallbackOut[0].identifiers.isbn, "9788576577263");
 }
 
 // 4. HTTP 429 throws dalibre.error("rateLimited")
